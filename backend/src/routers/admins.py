@@ -1,48 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
+import json
 from src.database import get_db
 from src.models.user import User
 from src.models.community import Community, Property
-from src.models.bill import Bill
-from src.models.repair import Repair
+from src.models.bill import Bill, BillType, BillStatus
+from src.models.repair import Repair, RepairType, RepairStatus
+from src.models.work_order import WorkOrder, WorkOrderType, WorkOrderStatus, Priority, InspectionTask
+from src.models.notification import Notification, NotificationType
+from src.models.visitor import Visitor
 from src.schemas.user import UserResponse
+from src.schemas.bill import BillCreate, BillResponse
+from src.schemas.repair import RepairCreate, RepairResponse
+from src.schemas.work_order import WorkOrderCreate, WorkOrderResponse, InspectionTaskCreate, InspectionTaskResponse
+from src.schemas.notification import NotificationCreate, NotificationResponse
+from src.schemas.community import CommunityCreate, CommunityResponse, PropertyCreate, PropertyResponse
 from src.middleware import get_current_user, require_role
 from src.models.user import UserRole
+from datetime import datetime, date
 
 router = APIRouter(tags=["Admin"])
 
 
-@router.get("/users/", response_model=List[UserResponse])
-async def list_users(
-    skip: int = 0,
-    limit: int = 100,
+@router.post("/communities/", response_model=CommunityResponse, status_code=status.HTTP_201_CREATED)
+async def create_community(
+    community_create: CommunityCreate,
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db)
 ):
-    """List all users (admin only)"""
-    result = await db.execute(
-        select(User).offset(skip).limit(limit)
-    )
-    return result.scalars().all()
+    """Create a new community (admin only)"""
+    community = Community(**community_create.model_dump())
+    db.add(community)
+    await db.commit()
+    await db.refresh(community)
+    return community
 
 
-@router.get("/properties/", response_model=List)
-async def list_properties(
-    skip: int = 0,
-    limit: int = 100,
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: AsyncSession = Depends(get_db)
-):
-    """List all properties (admin only)"""
-    result = await db.execute(
-        select(Property).offset(skip).limit(limit)
-    )
-    return result.scalars().all()
-
-
-@router.get("/communities/", response_model=List)
+@router.get("/communities/", response_model=List[CommunityResponse])
 async def list_communities(
     skip: int = 0,
     limit: int = 100,
@@ -56,6 +52,34 @@ async def list_communities(
     return result.scalars().all()
 
 
+@router.post("/properties/", response_model=PropertyResponse, status_code=status.HTTP_201_CREATED)
+async def create_property(
+    property_create: PropertyCreate,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new property (admin only)"""
+    property_obj = Property(**property_create.model_dump())
+    db.add(property_obj)
+    await db.commit()
+    await db.refresh(property_obj)
+    return property_obj
+
+
+@router.get("/properties/", response_model=List[PropertyResponse])
+async def list_properties(
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db)
+):
+    """List all properties (admin only)"""
+    result = await db.execute(
+        select(Property).offset(skip).limit(limit)
+    )
+    return result.scalars().all()
+
+
 @router.get("/stats/", response_model=dict)
 async def get_stats(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
@@ -63,9 +87,6 @@ async def get_stats(
 ):
     """Get system statistics (admin only)"""
     from sqlalchemy import func
-    from src.models.bill import BillStatus
-    from src.models.repair import RepairStatus
-    from datetime import datetime
     
     user_count = await db.execute(select(func.count()).select_from(User))
     property_count = await db.execute(select(func.count()).select_from(Property))

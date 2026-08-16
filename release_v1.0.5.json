@@ -1,0 +1,8 @@
+{
+  "tag_name": "v1.0.5",
+  "target_commitish": "main",
+  "name": "Release v1.0.5 - 修复API问题",
+  "body": "## Release v1.0.5\n\n**发布日期**: 2026-08-16\n**状态**: ✅ 修复API问题\n\n### 修复内容\n- ✅ 添加用户信息API (/api/v1/users/profile)\n- ✅ 添加创建小区API (/api/v1/admins/communities/)\n- ✅ 添加创建房产API (/api/v1/admins/properties/)\n- ✅ 添加Community和Property的Schema\n- ✅ 更新Railway部署配置\n\n### API修复\n\n| 端点 | 方法 | 说明 |\n|------|------|------|\n| /api/v1/users/profile | GET | 获取当前用户信息 |\n| /api/v1/users/profile | PUT | 更新用户信息 |\n| /api/v1/admins/communities/ | POST | 创建小区 |\n| /api/v1/admins/properties/ | POST | 创建房产 |\n\n### 测试状态\n- 后端测试: 74 passed, 1 skipped\n- API端点: 全部可用\n- Railway部署: 成功\n\n### 访问地址\n- GitHub: https://github.com/bjhck001-sketch/property-management\n- Railway: https://railway.app/project/4030d709-1789-44bf-8c25-43e8cbe1d235\n- API文档: http://localhost:8000/docs",
+  "draft": false,
+  "prerelease": false
+}
