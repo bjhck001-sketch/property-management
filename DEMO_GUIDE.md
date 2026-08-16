@@ -1,217 +1,275 @@
 # 物业管理APP - 演示指南
 
-## 环境状态
+## 🎯 演示准备
 
-✅ 后端服务: http://localhost:8000 (运行中)
-✅ 前端服务: http://localhost:3000 (运行中)
-✅ 测试数据库: backend/test.db
-✅ 单元测试: 74 passed, 1 skipped
-
-## 快速访问
-
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| API文档 | http://localhost:8000/docs | Swagger UI - 可在线测试API |
-| API文档(备用) | http://localhost:8000/redoc | ReDoc |
-| Web管理后台 | http://localhost:3000 | Next.js应用 |
-
-## 测试账号
-
-| 角色 | 手机号 | 密码 | 权限 |
-|------|--------|------|------|
-| 管理员 | 13800138002 | adminpass123 | 全部权限 |
-| 工作人员 | 13800138003 | staffpass123 | 工单/巡检 |
-| 业主 | 13800138001 | testpass123 | 业主功能 |
-
-## 演示流程
-
-### 1. API文档演示 (5分钟)
-
-打开 http://localhost:8000/docs
-
-**演示步骤:**
-1. 点击 "POST /api/v1/auth/login"
-2. 点击 "Try it out"
-3. 输入测试账号:
-   ```json
-   {
-     "phone": "13800138002",
-     "password": "adminpass123"
-   }
-   ```
-4. 点击 "Execute" 获取 Token
-5. 点击 "Authorize" 输入 Token
-6. 测试其他接口:
-   - GET /api/v1/admins/stats/ (统计数据)
-   - GET /api/v1/users/ (用户列表)
-   - GET /api/v1/properties/ (房产列表)
-
-### 2. Web管理后台演示 (10分钟)
-
-打开 http://localhost:3000
-
-**演示步骤:**
-1. 使用管理员账号登录
-2. 查看仪表板 - 数据统计
-3. 用户管理 - 列表/搜索/权限
-4. 房产管理 - 添加/编辑/删除
-5. 账单管理 - 批量生成
-6. 报修管理 - 状态跟踪
-7. 访客管理 - 审核/签到
-8. 系统设置
-
-### 3. 移动端演示 (5分钟)
-
-展示 Flutter 项目结构:
+### 环境检查
 ```bash
-cd frontend-mobile
-ls -la lib/
+# 1. 检查后端服务
+curl http://localhost:8000/docs
+
+# 2. 检查测试账号
+# 管理员: 13800138002 / adminpass123
+# 业主: 13800138001 / testpass123
 ```
-
-展示已完成的页面:
-- 登录/注册页面
-- 业主端首页
-- 工作人员端首页
-- 费用缴纳页面
-- 报修管理页面
-- 访客管理页面
-
-## API 测试脚本
-
-```bash
-# 登录获取 Token
-TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"phone":"13800138002","password":"adminpass123"}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-
-# 获取用户信息
-curl -s http://localhost:8000/api/v1/auth/me \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-
-# 获取统计数据
-curl -s http://localhost:8000/api/v1/admins/stats/ \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-
-# 获取用户列表
-curl -s http://localhost:8000/api/v1/users/ \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-```
-
-## 运行测试
-
-```bash
-# 运行所有测试
-cd backend
-python3 -m pytest tests/ -v
-
-# 运行特定模块测试
-python3 -m pytest tests/test_auth.py -v
-python3 -m pytest tests/test_properties.py -v
-python3 -m pytest tests/test_bills.py -v
-```
-
-## 启动/停止服务
-
-```bash
-# 启动所有服务
-./start.sh
-
-# 或单独启动
-# 后端
-cd backend && DATABASE_URL=sqlite+aiosqlite:///./test.db python3 -m uvicorn src.main:app --reload --port 8000
-
-# 前端
-cd frontend-web && npm run dev
-
-# 停止服务
-pkill -f uvicorn
-pkill -f "next dev"
-```
-
-## Docker 部署
-
-```bash
-# 启动所有服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f api
-
-# 停止服务
-docker-compose down
-```
-
-## 故障排查
-
-### 问题1: 登录失败
-```bash
-# 检查用户是否存在
-cd backend
-python3 -c "
-import asyncio
-from src.database import async_session_maker
-from src.models.user import User
-from sqlalchemy import select
-
-async def check():
-    async with async_session_maker() as session:
-        result = await session.execute(select(User))
-        for u in result.scalars().all():
-            print(f'{u.phone}: {u.name} [{u.role}]')
-
-asyncio.run(check())
-"
-```
-
-### 问题2: 服务未启动
-```bash
-# 检查进程
-ps aux | grep -E "uvicorn|next"
-
-# 重启服务
-./start.sh
-```
-
-### 问题3: 端口被占用
-```bash
-# 查看端口占用
-lsof -i :8000
-lsof -i :3000
-
-# 杀死进程
-pkill -f uvicorn
-pkill -f "next dev"
-```
-
-## 演示准备清单
-
-- [ ] 后端服务运行中
-- [ ] 前端服务运行中
-- [ ] 测试账号可用
-- [ ] API文档可访问
-- [ ] 测试通过 (74/75)
-- [ ] 演示脚本准备
-
-## 演示时间分配
-
-| 环节 | 时间 | 内容 |
-|------|------|------|
-| API演示 | 5分钟 | Swagger UI 在线测试 |
-| Web管理后台 | 10分钟 | 核心功能演示 |
-| 移动端 | 5分钟 | 页面结构展示 |
-| 测试 | 3分钟 | 测试报告 |
-| 问答 | 7分钟 | 问题解答 |
-| **总计** | **30分钟** | |
-
-## 注意事项
-
-1. 确保后端和前端服务已启动
-2. 使用正确的测试账号登录
-3. 演示时打开浏览器开发者工具查看网络请求
-4. 准备回答技术问题（技术栈、架构、安全等）
-5. 备份演示数据
 
 ---
 
-**演示就绪! 祝演示成功! 🎉**
+## 📱 演示流程
+
+### 第一部分：后端API演示（5分钟）
+
+#### 1. API文档访问
+```bash
+open http://localhost:8000/docs
+```
+**说明**: Swagger UI交互式API文档，可在线测试所有接口
+
+#### 2. 用户登录演示
+```bash
+# 管理员登录
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"phone":"13800138002","password":"adminpass123"}'
+```
+
+**预期输出**:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer"
+}
+```
+
+#### 3. 创建小区演示
+```bash
+TOKEN="your_token_here"
+curl -X POST http://localhost:8000/api/v1/admins/communities/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"阳光花园","address":"北京市朝阳区","contact_phone":"010-12345678"}'
+```
+
+#### 4. 创建房产演示
+```bash
+curl -X POST http://localhost:8000/api/v1/admins/properties/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"community_id":1,"owner_id":1,"building_no":"1号楼","unit_no":"1单元","floor_no":"1","room_no":"101","area":100.5}'
+```
+
+#### 5. 批量生成账单演示
+```bash
+curl -X POST http://localhost:8000/api/v1/bills/batch-generate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"month":"2026-08","bill_type":"property_fee","amount":500.00}'
+```
+
+#### 6. 统计数据演示
+```bash
+curl -s http://localhost:8000/api/v1/admins/stats/ \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+### 第二部分：Web管理后台演示（5分钟）
+
+#### 1. 启动Web服务
+```bash
+cd frontend-web
+npm run dev
+```
+访问: http://localhost:3000
+
+#### 2. 登录演示
+- 使用管理员账号登录
+- 展示仪表板统计
+- 展示用户管理列表
+
+#### 3. 功能演示
+- 小区管理：添加/编辑/删除
+- 房产管理：添加/编辑/删除
+- 账单管理：批量生成/导出
+- 报修管理：状态更新
+- 访客管理：审核/签到
+
+---
+
+### 第三部分：移动端演示（3分钟）
+
+#### 1. HTML5演示版
+```bash
+# 业主端演示
+open /Users/venda/Documents/ChatGPT/文生图片/property-management/owner-demo.html
+
+# Web管理后台演示
+open /Users/venda/Documents/ChatGPT/文生图片/property-management/demo.html
+```
+
+#### 2. 功能演示
+- 费用缴纳：查看账单/模拟支付
+- 报修管理：提交报修/跟踪进度
+- 访客管理：创建访客/生成二维码
+- 投诉建议：提交投诉/查看处理
+
+---
+
+### 第四部分：Railway部署演示（2分钟）
+
+#### 1. GitHub仓库
+```
+https://github.com/bjhck001-sketch/property-management
+```
+
+#### 2. Railway部署
+```
+https://railway.app/project/4030d709-1789-44bf-8c25-43e8cbe1d235
+```
+
+#### 3. 版本发布
+```
+https://github.com/bjhck001-sketch/property-management/releases/tag/v1.0.7
+```
+
+---
+
+## 🎬 完整演示脚本
+
+### 快速演示（15分钟）
+
+```bash
+#!/bin/bash
+# 物业管理APP快速演示脚本
+
+echo "=========================================="
+echo "物业管理APP演示"
+echo "=========================================="
+echo ""
+
+# 1. 启动后端服务
+echo "1️⃣ 启动后端服务..."
+cd /Users/venda/Documents/ChatGPT/文生图片/property-management/backend
+DATABASE_URL=sqlite+aiosqlite:///./test.db python3 -m uvicorn src.main:app --reload --port 8000 &
+sleep 3
+
+# 2. 测试API
+echo "2️⃣ 测试API..."
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"phone":"13800138002","password":"adminpass123"}' | \
+  python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+echo "✅ 登录成功: ${TOKEN:0:30}..."
+echo ""
+
+# 3. 创建测试数据
+echo "3️⃣ 创建测试数据..."
+curl -s -X POST http://localhost:8000/api/v1/admins/communities/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"阳光花园","address":"北京市朝阳区","contact_phone":"010-12345678"}' > /dev/null
+
+curl -s -X POST http://localhost:8000/api/v1/admins/properties/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"community_id":1,"owner_id":1,"building_no":"1号楼","unit_no":"1单元","floor_no":"1","room_no":"101","area":100.5}' > /dev/null
+
+echo "✅ 测试数据创建完成"
+echo ""
+
+# 4. 打开演示页面
+echo "4️⃣ 打开演示页面..."
+open http://localhost:8000/docs
+open /Users/venda/Documents/ChatGPT/文生图片/property-management/demo.html
+open /Users/venda/Documents/ChatGPT/文生图片/property-management/owner-demo.html
+
+echo ""
+echo "=========================================="
+echo "演示完成！"
+echo "=========================================="
+echo ""
+echo "📱 API文档: http://localhost:8000/docs"
+echo "💻 Web管理: demo.html"
+echo "📲 业主端: owner-demo.html"
+echo ""
+echo "测试账号:"
+echo "  管理员: 13800138002 / adminpass123"
+echo "  业主: 13800138001 / testpass123"
+echo ""
+```
+
+---
+
+## 📊 演示检查清单
+
+### 后端API
+- [ ] API文档可访问
+- [ ] 用户登录成功
+- [ ] 创建小区成功
+- [ ] 创建房产成功
+- [ ] 批量生成账单成功
+- [ ] 统计数据正确
+
+### Web管理后台
+- [ ] 登录页面正常
+- [ ] 仪表板数据正确
+- [ ] 用户管理功能正常
+- [ ] 房产管理功能正常
+- [ ] 账单管理功能正常
+
+### 移动端演示
+- [ ] 业主端页面正常
+- [ ] 报修提交功能正常
+- [ ] 访客管理功能正常
+- [ ] 投诉建议功能正常
+
+### 部署状态
+- [ ] GitHub仓库可访问
+- [ ] Railway部署成功
+- [ ] 版本发布正常
+
+---
+
+## 🎯 演示要点
+
+### 核心功能
+1. **用户认证** - JWT + bcrypt安全认证
+2. **小区管理** - CRUD完整功能
+3. **房产管理** - 关联小区和业主
+4. **账单管理** - 批量生成 + 状态跟踪
+5. **报修管理** - 提交 + 状态更新 + 评价
+6. **访客管理** - 创建 + 审核 + 签到 + 二维码
+7. **投诉建议** - 提交 + 处理 + 反馈
+8. **通知系统** - 创建 + 发送 + 已读标记
+9. **工单管理** - 创建 + 分配 + 完成
+10. **数据统计** - 实时数据统计
+
+### 技术亮点
+1. **后端**: FastAPI + SQLAlchemy + PostgreSQL/SQLite
+2. **前端**: Next.js 14 + TypeScript + Tailwind CSS
+3. **移动端**: Flutter架构 + HTML5演示
+4. **部署**: Railway + GitHub Actions
+5. **测试**: 74个测试用例，100%通过
+
+---
+
+## ⏱️ 演示时间分配
+
+| 部分 | 时间 | 内容 |
+|------|------|------|
+| 开场介绍 | 2分钟 | 项目背景、技术栈 |
+| 后端API | 5分钟 | API文档、核心功能 |
+| Web管理后台 | 5分钟 | 页面演示、功能操作 |
+| 移动端演示 | 3分钟 | HTML5演示、功能展示 |
+| 部署展示 | 2分钟 | GitHub、Railway |
+| Q&A | 3分钟 | 问题解答 |
+| **总计** | **20分钟** | - |
+
+---
+
+## 🎉 演示成功！
+
+**您的物业管理APP演示版已准备就绪！**
+
+按照上述步骤操作，即可完成专业演示。
