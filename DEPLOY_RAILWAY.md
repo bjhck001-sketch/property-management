@@ -1,41 +1,71 @@
-# Railway部署配置
+# Railway部署指南
 
-## 配置Railway
+## 当前状态
+- ✅ GitHub仓库已更新
+- ✅ Dockerfile已优化
+- ✅ 部署配置已添加
 
-### 1. 创建Railway项目
-1. 访问: https://railway.app/
-2. 登录GitHub账号
-3. 点击 "New Project" → "Deploy from GitHub repo"
-4. 选择仓库: property-management
+## 重新部署步骤
 
-### 2. 配置环境变量
-
-在Railway Dashboard中设置以下环境变量：
-
+### 1. 在Railway Dashboard中重新部署
 ```
-DATABASE_URL=sqlite+aiosqlite:///./test.db
-JWT_SECRET=your-secret-key-here
-CORS_ORIGINS=*
+1. 进入项目 property-management
+2. 点击 "Deployments" 标签
+3. 找到最新的部署记录（显示Failed）
+4. 点击 "Retry" 按钮重新部署
 ```
 
-### 3. 配置构建
+### 2. 如果仍然失败，请查看日志
+```
+1. 点击部署记录
+2. 点击 "Build Logs" 标签
+3. 查看完整的错误信息
+4. 将日志截图或复制给我
+```
 
-Railway会自动检测Dockerfile并构建。
-
-### 4. 部署
-
-点击 "Deploy" 按钮。
+### 3. 配置环境变量（重要）
+```
+在Railway Dashboard中：
+1. 点击 "Settings" → "Variables"
+2. 添加以下环境变量：
+   - DATABASE_URL = sqlite+aiosqlite:///./test.db
+   - JWT_SECRET = your-secret-key-here
+   - CORS_ORIGINS = *
+3. 保存并重新部署
+```
 
 ## 故障排除
 
-如果构建失败：
+### 问题1：构建失败
+**可能原因：**
+- Python依赖安装失败
+- 系统依赖缺失
+- Dockerfile配置错误
 
-1. 检查Railway日志
-2. 确保Dockerfile正确
-3. 检查依赖文件
+**解决方案：**
+- 查看Build Logs中的具体错误
+- 告诉我错误信息，我会帮您修复
 
-## 访问地址
+### 问题2：服务无法启动
+**可能原因：**
+- 端口配置错误
+- 环境变量未设置
+- 数据库连接失败
 
-部署成功后：
+**解决方案：**
+- 检查环境变量配置
+- 查看Deploy Logs
+- 确认端口设置为8080
+
+## 测试账号
+
+| 角色 | 手机号 | 密码 |
+|------|--------|------|
+| 管理员 | 13800138002 | adminpass123 |
+| 工作人员 | 13800138003 | staffpass123 |
+| 业主 | 13800138001 | testpass123 |
+
+## 部署成功后访问
+
 - API: https://property-management-xxx.railway.app
 - 文档: https://property-management-xxx.railway.app/docs
