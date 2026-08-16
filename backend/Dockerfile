@@ -11,12 +11,16 @@ RUN apt-get update && apt-get install -y \
 # 复制依赖文件
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir pandas openpyxl xlrd
 
 # 复制应用代码
-COPY ./src ./src
+COPY . .
+
+# 创建上传目录
+RUN mkdir -p uploads
 
 # 暴露端口
 EXPOSE 8000
 
-# 启动命令
+# 启动应用
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
