@@ -1,68 +1,41 @@
-# Railway部署指南
+# Railway部署配置
 
-## 快速部署
+## 配置Railway
 
-### 方法一：使用Railway CLI（推荐）
+### 1. 创建Railway项目
+1. 访问: https://railway.app/
+2. 登录GitHub账号
+3. 点击 "New Project" → "Deploy from GitHub repo"
+4. 选择仓库: property-management
 
-```bash
-# 1. 安装Railway CLI
-npm install -g @railway/cli
+### 2. 配置环境变量
 
-# 2. 登录
-railway login
+在Railway Dashboard中设置以下环境变量：
 
-# 3. 初始化项目
-cd /Users/venda/Documents/ChatGPT/文生图片/property-management/backend
-railway init
-
-# 4. 设置环境变量
-railway variables set DATABASE_URL=sqlite+aiosqlite:///./test.db
-railway variables set JWT_SECRET=your-secret-key-here
-railway variables set CORS_ORIGINS=*
-
-# 5. 部署
-railway up
+```
+DATABASE_URL=sqlite+aiosqlite:///./test.db
+JWT_SECRET=your-secret-key-here
+CORS_ORIGINS=*
 ```
 
-### 方法二：使用Railway Dashboard
+### 3. 配置构建
 
-1. 访问: https://railway.app/
-2. 使用GitHub账号登录
-3. 点击 "New Project" → "Deploy from GitHub repo"
-4. 选择仓库: bjhck001-sketch/property-management
-5. 配置环境变量:
-   - DATABASE_URL: sqlite+aiosqlite:///./test.db
-   - JWT_SECRET: your-secret-key-here
-   - CORS_ORIGINS: *
-6. 点击 "Deploy"
+Railway会自动检测Dockerfile并构建。
 
-## 环境变量
+### 4. 部署
 
-| 变量名 | 值 | 说明 |
-|--------|-----|------|
-| DATABASE_URL | sqlite+aiosqlite:///./test.db | 数据库连接 |
-| JWT_SECRET | your-secret-key-here | JWT密钥 |
-| CORS_ORIGINS | * | 允许的域名 |
+点击 "Deploy" 按钮。
 
-## 免费额度
+## 故障排除
 
-- 每月$5免费额度
-- 包含：
-  - 1个服务
-  - 512MB内存
-  - 0.1 vCPU
-  - 1GB网络出口流量
+如果构建失败：
+
+1. 检查Railway日志
+2. 确保Dockerfile正确
+3. 检查依赖文件
 
 ## 访问地址
 
-部署后，Railway会提供访问地址：
-- API: https://property-api-xxx.railway.app
-- 文档: https://property-api-xxx.railway.app/docs
-
-## 测试账号
-
-| 角色 | 手机号 | 密码 |
-|------|--------|------|
-| 管理员 | 13800138002 | adminpass123 |
-| 工作人员 | 13800138003 | staffpass123 |
-| 业主 | 13800138001 | testpass123 |
+部署成功后：
+- API: https://property-management-xxx.railway.app
+- 文档: https://property-management-xxx.railway.app/docs
