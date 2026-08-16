@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>物业管理 - 业主端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .page { display: none; min-height: 100vh; background: #f5f5f5; }
+        .page.active { display: block; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e5e5; display: flex; z-index: 100; }
+        .bottom-nav-item { flex: 1; text-align: center; padding: 8px 0; color: #999; }
+        .bottom-nav-item.active { color: #2196F3; }
+        .bottom-nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
+        .bottom-nav-item span { font-size: 10px; }
+        .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        .input-field { width: 100%; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .btn-primary { width: 100%; padding: 14px; background: #2196F3; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; }
+        .btn-secondary { width: 100%; padding: 14px; background: white; color: #2196F3; border: 1px solid #2196F3; border-radius: 8px; font-size: 16px; font-weight: 500; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+        .badge-pending { background: #FFF3E0; color: #E65100; }
+        .badge-paid { background: #E8F5E9; color: #2E7D32; }
+        .badge-overdue { background: #FFEBEE; color: #C62828; }
+        .badge-completed { background: #E3F2FD; color: #1565C0; }
+        .image-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .image-item { position: relative; width: 80px; height: 80px; }
+        .image-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .image-item .remove-btn { position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="page active">
+        <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 p-4">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-building text-white text-3xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">物业管理</h1>
+                    <p class="text-gray-500 mt-2">业主端</p>
+                </div>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">手机号</label>
+                        <input type="tel" id="phone" class="input-field" placeholder="请输入手机号" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
+                        <input type="password" id="password" class="input-field" placeholder="请输入密码" required>
+                    </div>
+                    <button type="submit" class="btn-primary mb-4">登录</button>
+                    <button type="button" onclick="showRegister()" class="btn-secondary">注册账号</button>
+                </form>
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                    <p class="font-medium mb-2">测试账号：</p>
+                    <p>业主: 13800138001 / testpass123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Home Page -->
+    <div id="homePage" class="page pb-20">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-blue-100 text-sm">欢迎回来</p>
+                    <p class="text-xl font-bold" id="welcomeName">用户</p>
+                </div>
+                <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-bell"></i>
+                </div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-xl p-3 flex items-center gap-3">
+                <i class="fas fa-home text-xl"></i>
+                <div>
+                    <p class="text-sm">1栋1单元101号</p>
+                    <p class="text-xs text-blue-100">面积为100㎡</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-4 py-4">
+            <div class="grid-4">
+                <div class="text-center" onclick="showPage('billsPage')">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-money-bill-wave text-blue-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">费用缴纳</p>
+                </div>
+                <div class="text-center" onclick="showPage('repairsPage')">
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-wrench text-orange-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">报事报修</p>
+                </div>
+                <div class="text-center" onclick="showPage('visitorsPage')">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-user-friends text-green-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">访客管理</p>
+                </div>
+                <div class="text-center" onclick="showPage('complaintsPage')">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-comment-dots text-purple-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">投诉建议</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-qrcode text-teal-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">智慧门禁</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-car text-yellow-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">车位管理</p>
+                </div>
+                <div class="text-center" onclick="showPage('announcementsPage')">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-bullhorn text-red-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">公告通知</p>
+                </div>
+                <div class="text-center" onclick="showPage('profilePage')">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-user text-indigo-500 text-xl"></i>
+                    </div>
+                    <p class="text-xs text-gray-600">个人中心</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4">
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800">最新公告</h3>
+                    <span class="text-blue-500 text-sm" onclick="showPage('announcementsPage')">查看全部</span>
+                </div>
+                <div class="border-l-4 border-blue-500 pl-4 py-2">
+                    <p class="font-medium text-gray-800">小区停水通知</p>
+                    <p class="text-sm text-gray-500 mt-1">因管道维修，明日8:00-12:00停水，请各位业主提前做好储水准备。</p>
+                    <p class="text-xs text-gray-400 mt-2">2024-01-20</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800">待缴费用</h3>
+                    <span class="text-blue-500 text-sm" onclick="showPage('billsPage')">立即缴费</span>
+                </div>
+                <div class="flex items-center justify-between py-3 border-b">
+                    <div>
+                        <p class="font-medium">物业费</p>
+                        <p class="text-sm text-gray-500">到期日: 2024-02-01</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-lg text-red-500">¥500.00</p>
+                        <span class="badge badge-pending">待缴费</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between py-3">
+                    <div>
+                        <p class="font-medium">水费</p>
+                        <p class="text-sm text-gray-500">到期日: 2024-02-15</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-lg text-orange-500">¥45.50</p>
+                        <span class="badge badge-overdue">即将逾期</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bills Page -->
+    <div id="billsPage" class="page pb-20">
+        <div class="bg-white px-4 py-4 flex items-center gap-4 sticky top-0 z-10">
+            <button onclick="showPage('homePage')" class="text-gray-600"><i class="fas fa-arrow-left text-xl"></i></button>
+            <h1 class="text-lg font-semibold">费用缴纳</h1>
+        </div>
+        <div class="px-4 py-4">
+            <div id="billsList">
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">物业费</h3>
+                            <p class="text-sm text-gray-500">到期日: 2024-02-01</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg text-red-500">¥500.00</p>
+                            <span class="badge badge-pending">待缴费</span>
+                        </div>
+                    </div>
+                    <button onclick="payBill(1, 500, '物业费')" class="mt-3 w-full bg-blue-500 text-white py-2 rounded-lg">立即缴费</button>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">水费</h3>
+                            <p class="text-sm text-gray-500">到期日: 2024-02-15</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg text-orange-500">¥45.50</p>
+                            <span class="badge badge-overdue">即将逾期</span>
+                        </div>
+                    </div>
+                    <button onclick="payBill(2, 45.50, '水费')" class="mt-3 w-full bg-blue-500 text-white py-2 rounded-lg">立即缴费</button>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">电费</h3>
+                            <p class="text-sm text-gray-500">到期日: 2024-02-15</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg">¥128.00</p>
+                            <span class="badge badge-pending">待缴费</span>
+                        </div>
+                    </div>
+                    <button onclick="payBill(3, 128, '电费')" class="mt-3 w-full bg-blue-500 text-white py-2 rounded-lg">立即缴费</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repairs Page -->
+    <div id="repairsPage" class="page pb-20">
+        <div class="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="showPage('homePage')" class="text-gray-600"><i class="fas fa-arrow-left text-xl"></i></button>
+                <h1 class="text-lg font-semibold">报修管理</h1>
+            </div>
+            <button onclick="showRepairModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-plus mr-2"></i>提交报修
+            </button>
+        </div>
+        <div class="px-4 py-4">
+            <div class="card">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="badge badge-completed">已完成</span>
+                    <span class="text-xs text-gray-400">2024-01-15</span>
+                </div>
+                <h3 class="font-medium text-gray-800 mb-2">漏水维修</h3>
+                <p class="text-sm text-gray-500 mb-3">厨房水龙头漏水，已维修完成</p>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-500">★★★★★</span>
+                        <span class="text-sm text-gray-500">已评价</span>
+                    </div>
+                    <span class="text-green-500 text-sm"><i class="fas fa-check-circle mr-1"></i>已完成</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="badge badge-pending">进行中</span>
+                    <span class="text-xs text-gray-400">2024-01-18</span>
+                </div>
+                <h3 class="font-medium text-gray-800 mb-2">电梯故障</h3>
+                <p class="text-sm text-gray-500 mb-3">电梯运行异常，已报修等待处理</p>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-orange-500 h-2 rounded-full" style="width: 60%"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">维修人员已接单，预计2小时内上门</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitors Page -->
+    <div id="visitorsPage" class="page pb-20">
+        <div class="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="showPage('homePage')" class="text-gray-600"><i class="fas fa-arrow-left text-xl"></i></button>
+                <h1 class="text-lg font-semibold">访客管理</h1>
+            </div>
+            <button onclick="showVisitorModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-plus mr-2"></i>创建访客
+            </button>
+        </div>
+        <div class="px-4 py-4">
+            <div class="card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-green-500"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium">李四</h3>
+                            <p class="text-sm text-gray-500">139****8001</p>
+                        </div>
+                    </div>
+                    <span class="badge badge-paid">已通过</span>
+                </div>
+                <div class="flex items-center justify-between text-sm text-gray-500">
+                    <span><i class="far fa-clock mr-1"></i>2024-01-20 14:00</span>
+                    <span>预计停留4小时</span>
+                </div>
+                <div class="mt-3 p-3 bg-blue-50 rounded-lg text-center">
+                    <p class="text-xs text-gray-500 mb-1">访客通行码</p>
+                    <p class="text-2xl font-bold text-blue-600 font-mono">88493021</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complaints Page -->
+    <div id="complaintsPage" class="page pb-20">
+        <div class="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="showPage('homePage')" class="text-gray-600"><i class="fas fa-arrow-left text-xl"></i></button>
+                <h1 class="text-lg font-semibold">投诉建议</h1>
+            </div>
+            <button onclick="showComplaintModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-plus mr-2"></i>提交投诉
+            </button>
+        </div>
+        <div class="px-4 py-4">
+            <div class="card">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="badge badge-completed">已处理</span>
+                    <span class="text-xs text-gray-400">2024-01-10</span>
+                </div>
+                <h3 class="font-medium text-gray-800 mb-2">噪音扰民</h3>
+                <p class="text-sm text-gray-500 mb-3">楼上邻居深夜装修，影响休息</p>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500 mb-1">物业回复：</p>
+                    <p class="text-sm text-gray-700">已联系楼上住户，将在规定时间内停止施工。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcements Page -->
+    <div id="announcementsPage" class="page pb-20">
+        <div class="bg-white px-4 py-4 flex items-center gap-4 sticky top-0 z-10">
+            <button onclick="showPage('homePage')" class="text-gray-600"><i class="fas fa-arrow-left text-xl"></i></button>
+            <h1 class="text-lg font-semibold">公告通知</h1>
+        </div>
+        <div class="px-4 py-4">
+            <div class="card">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-exclamation text-red-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-medium">停水通知</h3>
+                            <span class="badge badge-pending">重要</span>
+                        </div>
+                        <p class="text-sm text-gray-600">因管道维修，明日8:00-12:00停水，请各位业主提前做好储水准备。</p>
+                        <p class="text-xs text-gray-400 mt-2">2024-01-20 09:00</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-calendar-alt text-green-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-medium mb-1">元旦联欢会通知</h3>
+                        <p class="text-sm text-gray-600">元旦联欢会将于本周五下午2点在小区广场举行，欢迎业主参加！</p>
+                        <p class="text-xs text-gray-400 mt-2">2024-01-18 14:00</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-shield-alt text-yellow-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-medium mb-1">安全提醒</h3>
+                        <p class="text-sm text-gray-600">近期有不法分子行窃，请各位业主注意关好门窗，妥善保管财物。</p>
+                        <p class="text-xs text-gray-400 mt-2">2024-01-15 10:00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Page -->
+    <div id="profilePage" class="page pb-20">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-8">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl font-bold" id="profileAvatar">U</div>
+                <div>
+                    <p class="text-xl font-bold" id="profileName">用户</p>
+                    <p class="text-blue-100" id="profilePhone">138****0001</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-4 -mt-4">
+            <div class="card">
+                <div class="grid-2">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <p class="text-2xl font-bold text-blue-600">100</p>
+                        <p class="text-sm text-gray-500">房产面积(㎡)</p>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <p class="text-2xl font-bold text-green-600">0</p>
+                        <p class="text-sm text-gray-500">待缴费用</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between py-3 border-b">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-home text-gray-400 w-5"></i>
+                            <span>我的房产</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between py-3 border-b">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-file-invoice text-gray-400 w-5"></i>
+                            <span>缴费记录</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between py-3 border-b">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-wrench text-gray-400 w-5"></i>
+                            <span>报修记录</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between py-3 border-b">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-bell text-gray-400 w-5"></i>
+                            <span>消息通知</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between py-3 border-b">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-cog text-gray-400 w-5"></i>
+                            <span>设置</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between py-3">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-sign-out-alt text-red-400 w-5"></i>
+                            <span class="text-red-500">退出登录</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div id="bottomNav" class="bottom-nav" style="display:none;">
+        <div class="bottom-nav-item active" onclick="showPage('homePage')">
+            <i class="fas fa-home"></i>
+            <span>首页</span>
+        </div>
+        <div class="bottom-nav-item" onclick="showPage('billsPage')">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>缴费</span>
+        </div>
+        <div class="bottom-nav-item" onclick="showPage('repairsPage')">
+            <i class="fas fa-wrench"></i>
+            <span>报修</span>
+        </div>
+        <div class="bottom-nav-item" onclick="showPage('profilePage')">
+            <i class="fas fa-user"></i>
+            <span>我的</span>
+        </div>
+    </div>
+
+    <!-- Repair Modal -->
+    <div id="repairModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">提交报修</h2>
+            <form onsubmit="submitRepair(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">报修类型</label>
+                    <select class="input-field" id="repairType">
+                        <option value="indoor">室内维修</option>
+                        <option value="public">公共设施</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">报修标题</label>
+                    <input type="text" class="input-field" id="repairTitle" placeholder="请描述问题" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">详细描述</label>
+                    <textarea class="input-field" id="repairDesc" rows="3" placeholder="请详细描述问题..." required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">上传图片</label>
+                    <input type="file" id="repairImages" accept="image/*" multiple class="input-field" onchange="previewImages(this, 'repairPreview')">
+                    <div id="repairPreview" class="image-preview"></div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal('repairModal')" class="flex-1 btn-secondary">取消</button>
+                    <button type="submit" class="flex-1 btn-primary">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Visitor Modal -->
+    <div id="visitorModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">创建访客</h2>
+            <form onsubmit="submitVisitor(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">访客姓名</label>
+                    <input type="text" class="input-field" id="visitorName" placeholder="请输入访客姓名" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">访客电话</label>
+                    <input type="tel" class="input-field" id="visitorPhone" placeholder="请输入访客电话" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">访问日期</label>
+                    <input type="datetime-local" class="input-field" id="visitorDate" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">与业主关系</label>
+                    <select class="input-field" id="visitorRelation">
+                        <option value="friend">朋友</option>
+                        <option value="family">家人</option>
+                        <option value="delivery">快递/外卖</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal('visitorModal')" class="flex-1 btn-secondary">取消</button>
+                    <button type="submit" class="flex-1 btn-primary">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Complaint Modal -->
+    <div id="complaintModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">提交投诉</h2>
+            <form onsubmit="submitComplaint(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">投诉类型</label>
+                    <select class="input-field" id="complaintType">
+                        <option value="service">服务态度</option>
+                        <option value="facility">设施故障</option>
+                        <option value="noise">噪音扰民</option>
+                        <option value="sanitation">环境卫生</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">投诉标题</label>
+                    <input type="text" class="input-field" id="complaintTitle" placeholder="请简要描述" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">详细描述</label>
+                    <textarea class="input-field" id="complaintDesc" rows="3" placeholder="请详细描述问题..." required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">上传凭证</label>
+                    <input type="file" id="complaintImages" accept="image/*" multiple class="input-field" onchange="previewImages(this, 'complaintPreview')">
+                    <div id="complaintPreview" class="image-preview"></div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal('complaintModal')" class="flex-1 btn-secondary">取消</button>
+                    <button type="submit" class="flex-1 btn-primary">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">确认缴费</h2>
+            <div class="text-center mb-6">
+                <p class="text-gray-500 mb-2">缴费金额</p>
+                <p class="text-4xl font-bold text-blue-600" id="paymentAmount">¥0.00</p>
+                <p class="text-sm text-gray-500 mt-2" id="paymentType">物业费</p>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-700 font-medium mb-3">选择支付方式</p>
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
+                        <input type="radio" name="payment" value="wechat" checked class="w-5 h-5">
+                        <i class="fab fa-weixin text-green-500 text-2xl"></i>
+                        <span>微信支付</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
+                        <input type="radio" name="payment" value="alipay" class="w-5 h-5">
+                        <i class="fab fa-alipay text-blue-500 text-2xl"></i>
+                        <span>支付宝</span>
+                    </label>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeModal('paymentModal')" class="flex-1 btn-secondary">取消</button>
+                <button type="button" onclick="confirmPayment()" class="flex-1 btn-primary">确认支付</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/v1';
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+
+        // Check login status
+        if (token) {
+            document.getElementById('loginPage').classList.remove('active');
+            document.getElementById('homePage').classList.add('active');
+            document.getElementById('bottomNav').style.display = 'flex';
+            loadUserProfile();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password })
+                });
+                const data = await res.json();
+                if (data.access_token) {
+                    token = data.access_token;
+                    localStorage.setItem('token', token);
+                    document.getElementById('loginPage').classList.remove('active');
+                    document.getElementById('homePage').classList.add('active');
+                    document.getElementById('bottomNav').style.display = 'flex';
+                    loadUserProfile();
+                }
+            } catch (err) {
+                alert('登录失败，请检查账号密码');
+            }
+        }
+
+        async function loadUserProfile() {
+            try {
+                const res = await fetch(`${API_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = await res.json();
+                currentUser = user;
+                const name = user.name || '用户';
+                document.getElementById('welcomeName').textContent = name;
+                document.getElementById('profileName').textContent = name;
+                document.getElementById('profileAvatar').textContent = name[0];
+                document.getElementById('profilePhone').textContent = user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+            } catch (err) {
+                console.error('加载用户信息失败', err);
+            }
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            // Update bottom nav
+            document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
+            if (pageId === 'homePage') document.querySelectorAll('.bottom-nav-item')[0].classList.add('active');
+            if (pageId === 'billsPage') document.querySelectorAll('.bottom-nav-item')[1].classList.add('active');
+            if (pageId === 'repairsPage') document.querySelectorAll('.bottom-nav-item')[2].classList.add('active');
+            if (pageId === 'profilePage') document.querySelectorAll('.bottom-nav-item')[3].classList.add('active');
+        }
+
+        function showRepairModal() {
+            document.getElementById('repairModal').classList.add('active');
+        }
+
+        function showVisitorModal() {
+            document.getElementById('visitorModal').classList.add('active');
+        }
+
+        function showComplaintModal() {
+            document.getElementById('complaintModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function previewImages(input, previewId) {
+            const preview = document.getElementById(previewId);
+            preview.innerHTML = '';
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'image-item';
+                    div.innerHTML = `<img src="${e.target.result}"><button type="button" class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function submitRepair(e) {
+            e.preventDefault();
+            try {
+                const formData = new FormData();
+                formData.append('property_id', '1');
+                formData.append('repair_type', document.getElementById('repairType').value);
+                formData.append('title', document.getElementById('repairTitle').value);
+                formData.append('description', document.getElementById('repairDesc').value);
+                
+                const files = document.getElementById('repairImages').files;
+                Array.from(files).forEach(file => formData.append('images', file));
+                
+                const res = await fetch(`${API_URL}/repairs/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (res.ok) {
+                    alert('报修提交成功！');
+                    closeModal('repairModal');
+                    showPage('repairsPage');
+                }
+            } catch (err) {
+                alert('提交失败');
+            }
+        }
+
+        async function submitVisitor(e) {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API_URL}/visitors/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        property_id: 1,
+                        visitor_name: document.getElementById('visitorName').value,
+                        visitor_phone: document.getElementById('visitorPhone').value,
+                        start_time: new Date().toISOString(),
+                        end_time: new Date(Date.now() + 4*60*60*1000).toISOString()
+                    })
+                });
+                if (res.ok) {
+                    alert('访客创建成功！');
+                    closeModal('visitorModal');
+                    showPage('visitorsPage');
+                }
+            } catch (err) {
+                alert('提交失败');
+            }
+        }
+
+        async function submitComplaint(e) {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API_URL}/complaints/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        property_id: 1,
+                        complaint_type: document.getElementById('complaintType').value,
+                        title: document.getElementById('complaintTitle').value,
+                        description: document.getElementById('complaintDesc').value
+                    })
+                });
+                if (res.ok) {
+                    alert('投诉提交成功！');
+                    closeModal('complaintModal');
+                    showPage('complaintsPage');
+                }
+            } catch (err) {
+                alert('提交失败');
+            }
+        }
+
+        function showRegister() {
+            alert('注册功能开发中...');
+        }
+
+        // Payment demo
+        let currentPayment = null;
+        async function payBill(billId, amount, type) {
+            currentPayment = { billId, amount, type };
+            document.getElementById('paymentAmount').textContent = `¥${amount}`;
+            document.getElementById('paymentType').textContent = type;
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        async function confirmPayment() {
+            if (!currentPayment) return;
+            try {
+                // Create payment order
+                const createRes = await fetch(`${API_URL}/payments/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ bill_id: currentPayment.billId })
+                });
+                const paymentData = await createRes.json();
+                
+                // Confirm payment (mock)
+                const confirmRes = await fetch(`${API_URL}/payments/${paymentData.id}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (confirmRes.ok) {
+                    alert('支付成功！');
+                    closeModal('paymentModal');
+                    showPage('homePage');
+                }
+            } catch (err) {
+                // Mock success for demo
+                alert('支付成功！（演示模式）');
+                closeModal('paymentModal');
+                showPage('homePage');
+            }
+        }
+
+        // Close modal on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>

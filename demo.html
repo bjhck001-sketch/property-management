@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物业管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar { transition: all 0.3s; }
+        .menu-item:hover { background-color: rgba(0,0,0,0.05); }
+        .card { transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg sidebar">
+            <div class="p-6 border-b">
+                <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-building mr-2"></i>物业管理</h1>
+                <p class="text-sm text-gray-500 mt-1">管理后台系统</p>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li><a href="#dashboard" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('dashboard')"><i class="fas fa-tachometer-alt w-5"></i>仪表板</a></li>
+                    <li><a href="#users" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('users')"><i class="fas fa-users w-5"></i>用户管理</a></li>
+                    <li><a href="#properties" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('properties')"><i class="fas fa-home w-5"></i>房产管理</a></li>
+                    <li><a href="#bills" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('bills')"><i class="fas fa-file-invoice-dollar w-5"></i>账单管理</a></li>
+                    <li><a href="#repairs" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('repairs')"><i class="fas fa-wrench w-5"></i>报修管理</a></li>
+                    <li><a href="#visitors" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('visitors')"><i class="fas fa-user-clock w-5"></i>访客管理</a></li>
+                    <li><a href="#complaints" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('complaints')"><i class="fas fa-comment-dots w-5"></i>投诉建议</a></li>
+                    <li><a href="#settings" class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700" onclick="showPage('settings')"><i class="fas fa-cog w-5"></i>系统设置</a></li>
+                </ul>
+            </nav>
+            <div class="p-4 border-t">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold" id="userAvatar">U</div>
+                    <div>
+                        <p class="font-medium" id="userName">用户</p>
+                        <p class="text-xs text-gray-500" id="userRole">角色</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition">
+                    <i class="fas fa-sign-out-alt"></i>退出登录
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800" id="pageTitle">仪表板</h2>
+                    <p class="text-sm text-gray-500" id="currentDate"></p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700" id="roleBadge">管理员</span>
+                    <button class="p-2 rounded-lg hover:bg-gray-100"><i class="fas fa-bell text-gray-600"></i></button>
+                </div>
+            </header>
+            <main class="flex-1 overflow-y-auto p-6" id="mainContent">
+                <!-- Content will be loaded here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-white text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">物业管理后台</h2>
+                <p class="text-gray-500 mt-2">请登录您的账号</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">手机号</label>
+                    <input type="tel" id="phone" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="请输入手机号" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">密码</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition">登录</button>
+            </form>
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                <p class="font-medium mb-2">测试账号：</p>
+                <p>管理员: 13800138002 / adminpass123</p>
+                <p>业主: 13800138001 / testpass123</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/v1';
+        let currentUser = null;
+        let token = localStorage.getItem('token');
+
+        // Check login status
+        if (token) {
+            document.getElementById('loginModal').style.display = 'none';
+            loadDashboard();
+        }
+
+        function showPage(page) {
+            const titles = {
+                'dashboard': '仪表板',
+                'users': '用户管理',
+                'properties': '房产管理',
+                'bills': '账单管理',
+                'repairs': '报修管理',
+                'visitors': '访客管理',
+                'complaints': '投诉建议',
+                'settings': '系统设置'
+            };
+            document.getElementById('pageTitle').textContent = titles[page] || page;
+            
+            const loaders = {
+                'dashboard': loadDashboard,
+                'users': loadUsers,
+                'properties': loadProperties,
+                'bills': loadBills,
+                'repairs': loadRepairs,
+                'visitors': loadVisitors,
+                'complaints': loadComplaints,
+                'settings': loadSettings
+            };
+            if (loaders[page]) loaders[page]();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password })
+                });
+                const data = await res.json();
+                if (data.access_token) {
+                    token = data.access_token;
+                    localStorage.setItem('token', token);
+                    document.getElementById('loginModal').style.display = 'none';
+                    loadUserProfile();
+                    loadDashboard();
+                }
+            } catch (err) {
+                alert('登录失败，请检查账号密码');
+            }
+        }
+
+        async function loadUserProfile() {
+            try {
+                const res = await fetch(`${API_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = await res.json();
+                currentUser = user;
+                document.getElementById('userName').textContent = user.name || '用户';
+                document.getElementById('userAvatar').textContent = (user.name || 'U')[0];
+                document.getElementById('userRole').textContent = user.role === 'admin' ? '管理员' : user.role === 'staff' ? '工作人员' : '业主';
+                document.getElementById('roleBadge').textContent = user.role === 'admin' ? '管理员' : user.role === 'staff' ? '工作人员' : '业主';
+            } catch (err) {
+                console.error('加载用户信息失败', err);
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const res = await fetch(`${API_URL}/admins/stats/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const stats = await res.json();
+                
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="card bg-white rounded-xl shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">总用户数</p>
+                                    <p class="text-3xl font-bold text-gray-800">${stats.total_users || 0}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-users text-blue-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card bg-white rounded-xl shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">总房产数</p>
+                                    <p class="text-3xl font-bold text-gray-800">${stats.total_properties || 0}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-home text-green-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card bg-white rounded-xl shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">待处理报修</p>
+                                    <p class="text-3xl font-bold text-gray-800">${stats.pending_repairs || 0}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-wrench text-orange-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card bg-white rounded-xl shadow p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm">逾期账单</p>
+                                    <p class="text-3xl font-bold text-gray-800">${stats.overdue_bills || 0}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold mb-4">快捷操作</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <button class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition text-blue-700">
+                                    <i class="fas fa-file-invoice text-2xl mb-2"></i>
+                                    <p class="text-sm">生成账单</p>
+                                </button>
+                                <button class="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition text-green-700">
+                                    <i class="fas fa-clipboard-check text-2xl mb-2"></i>
+                                    <p class="text-sm">创建巡检</p>
+                                </button>
+                                <button class="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition text-orange-700">
+                                    <i class="fas fa-bullhorn text-2xl mb-2"></i>
+                                    <p class="text-sm">发布公告</p>
+                                </button>
+                                <button class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition text-purple-700">
+                                    <i class="fas fa-chart-bar text-2xl mb-2"></i>
+                                    <p class="text-sm">数据报表</p>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold mb-4">最近动态</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span class="text-gray-600">新增用户 张三</span>
+                                    <span class="text-gray-400 text-sm ml-auto">2分钟前</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                    <span class="text-gray-600">完成报修 #1234</span>
+                                    <span class="text-gray-400 text-sm ml-auto">15分钟前</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                                    <span class="text-gray-600">收到新投诉 #567</span>
+                                    <span class="text-gray-400 text-sm ml-auto">1小时前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                document.getElementById('mainContent').innerHTML = '<p class="text-center text-gray-500">加载数据失败</p>';
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_URL}/users/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const users = await res.json();
+                
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="bg-white rounded-xl shadow overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">用户</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">手机号</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">角色</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">状态</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${users.map(u => `
+                                    <tr>
+                                        <td class="px-6 py-4 flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">${(u.name || 'U')[0]}</div>
+                                            <span class="font-medium">${u.name || '未设置'}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-600">${u.phone}</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 rounded-full text-xs ${u.role === 'admin' ? 'bg-red-100 text-red-700' : u.role === 'staff' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}">
+                                                ${u.role === 'admin' ? '管理员' : u.role === 'staff' ? '工作人员' : '业主'}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 rounded-full text-xs ${u.status ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                                ${u.status ? '正常' : '禁用'}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (err) {
+                document.getElementById('mainContent').innerHTML = '<p class="text-center text-gray-500">加载数据失败</p>';
+            }
+        }
+
+        function loadProperties() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white rounded-xl shadow p-8 text-center">
+                    <i class="fas fa-home text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">房产管理</h3>
+                    <p class="text-gray-500">房产列表功能开发中...</p>
+                </div>
+            `;
+        }
+
+        function loadBills() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white rounded-xl shadow p-8 text-center">
+                    <i class="fas fa-file-invoice-dollar text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">账单管理</h3>
+                    <p class="text-gray-500">账单列表功能开发中...</p>
+                </div>
+            `;
+        }
+
+        function loadRepairs() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white rounded-xl shadow p-8 text-center">
+                    <i class="fas fa-wrench text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">报修管理</h3>
+                    <p class="text-gray-500">报修列表功能开发中...</p>
+                </div>
+            `;
+        }
+
+        function loadVisitors() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white rounded-xl shadow p-8 text-center">
+                    <i class="fas fa-user-clock text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">访客管理</h3>
+                    <p class="text-gray-500">访客列表功能开发中...</p>
+                </div>
+            `;
+        }
+
+        function loadComplaints() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white rounded-xl shadow p-8 text-center">
+                    <i class="fas fa-comment-dots text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">投诉建议</h3>
+                    <p class="text-gray-500">投诉列表功能开发中...</p>
+                </div>
+            `;
+        }
+
+        function loadSettings() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white rounded-xl shadow p-8">
+                    <h3 class="text-xl font-semibold mb-6">系统设置</h3>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-gray-600">系统名称</p>
+                            <p class="font-medium">物业管理平台</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-gray-600">物业电话</p>
+                            <p class="font-medium">400-123-4567</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-gray-600">物业费(元/㎡/月)</p>
+                            <p class="font-medium">2.50</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-gray-600">水费(元/吨)</p>
+                            <p class="font-medium">3.50</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            currentUser = null;
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('loginForm').reset();
+        }
+
+        // Update date
+        document.getElementById('currentDate').textContent = '今天是 ' + new Date().toLocaleDateString('zh-CN');
+    </script>
+</body>
+</html>

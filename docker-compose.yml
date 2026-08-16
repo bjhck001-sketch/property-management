@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  db:
+    image: postgres:15-alpine
+    container_name: property_db
+    environment:
+      POSTGRES_USER: property_user
+      POSTGRES_PASSWORD: property_pass
+      POSTGRES_DB: property_mgmt
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U property_user -d property_mgmt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - property_network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: property_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - property_network
+
+  # 后端API服务
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: property_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://property_user:property_pass@db:5432/property_mgmt
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_EXPIRE_DAYS: 7
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    networks:
+      - property_network
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Web管理后台
+  web:
+    build:
+      context: ./frontend-web
+      dockerfile: Dockerfile
+    container_name: property_web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      - api
+    networks:
+      - property_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  property_network:
+    driver: bridge
