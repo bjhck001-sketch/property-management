@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # 复制依赖文件
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir pandas openpyxl xlrd passlib[bcrypt]==1.7.4
+RUN pip install --no-cache-dir pandas openpyxl xlrd 'passlib[bcrypt]==1.7.4'
 
 # 复制应用代码
 COPY . .
