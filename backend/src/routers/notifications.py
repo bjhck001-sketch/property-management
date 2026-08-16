@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
+import json
 from src.database import get_db
 from src.models.user import User
 from src.models.notification import Notification, NotificationType
+from src.models.community import Property
 from src.schemas.notification import NotificationCreate, NotificationResponse
 from src.middleware import get_current_user, require_role
 from src.models.user import UserRole
@@ -37,11 +39,44 @@ async def create_notification(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a notification (admin only)"""
-    db_notification = Notification(**notification_create.model_dump())
+    db_notification = Notification(
+        **notification_create.model_dump()
+    )
     db.add(db_notification)
     await db.commit()
     await db.refresh(db_notification)
     return db_notification
+
+
+@router.post("/broadcast", response_model=List[NotificationResponse], status_code=status.HTTP_201_CREATED)
+async def broadcast_notification(
+    notification_create: NotificationCreate,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db)
+):
+    """Broadcast notification to all users (admin only)"""
+    from sqlalchemy import select as sa_select
+    result = await db.execute(sa_select(User).where(User.status == True))
+    users = result.scalars().all()
+    
+    created_notifications = []
+    for user in users:
+        notification = Notification(
+            notification_type=notification_create.notification_type,
+            title=notification_create.title,
+            content=notification_create.content,
+            target_user_id=user.id,
+            priority=notification_create.priority,
+            target_audience=notification_create.target_audience
+        )
+        db.add(notification)
+        created_notifications.append(notification)
+    
+    await db.commit()
+    for notification in created_notifications:
+        await db.refresh(notification)
+    
+    return created_notifications
 
 
 @router.put("/{notification_id}/read", response_model=NotificationResponse)

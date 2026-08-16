@@ -1,5 +1,5 @@
 #!/bin/bash
-# Railway部署功能测试脚本
+# Railway部署功能测试脚本（修复版）
 # 测试所有API功能
 
 BASE_URL="${1:-http://localhost:8000}"
@@ -45,7 +45,8 @@ echo ""
 # 测试用户信息
 echo "=== 3. 测试用户信息 ==="
 curl -s "$BASE_URL/api/v1/users/profile" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"✅ 用户: {d.get('name')} ({d.get('phone')}) [{d.get('role')})\")" 2>/dev/null
+  -H "Authorization: Bearer $ADMIN_TOKEN" | \
+  python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"✅ 用户: {d.get('name')} ({d.get('phone')}) [{d.get('role')})\")" 2>/dev/null || echo "❌ 获取用户信息失败"
 echo ""
 
 # 测试创建小区
@@ -118,21 +119,21 @@ curl -s -X POST "$BASE_URL/api/v1/complaints/" \
   python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"✅ 投诉: {d.get('title')} (ID: {d.get('id')})\")" 2>/dev/null || echo "❌ 创建投诉失败"
 echo ""
 
-# 测试业主创建通知
-echo "=== 12. 测试业主创建通知 ==="
+# 测试管理员创建通知
+echo "=== 12. 测试创建通知 ==="
 curl -s -X POST "$BASE_URL/api/v1/notifications/" \
-  -H "Authorization: Bearer $OWNER_TOKEN" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"notification_type":"system","title":"系统测试","content":"测试通知","target_user_id":1}' | \
+  -d '{"notification_type":"announcement","title":"停水通知","content":"因管道维修，本周末停水","target_user_id":1,"priority":"high"}' | \
   python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"✅ 通知: {d.get('title')} (ID: {d.get('id')})\")" 2>/dev/null || echo "❌ 创建通知失败"
 echo ""
 
-# 测试工单
+# 测试管理员创建工单
 echo "=== 13. 测试创建工单 ==="
-curl -s -X POST "$BASE_URL/api/v1/work-orders/" \
+curl -s -X POST "$BASE_URL/api/v1/work-orders/work-orders/" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"property_id":1,"work_order_type":"repair","title":"电梯维修","description":"电梯故障","priority":"urgent"}' | \
+  -d '{"property_id":1,"order_type":"repair","title":"电梯维修","description":"电梯故障","priority":"urgent"}' | \
   python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"✅ 工单: {d.get('title')} (ID: {d.get('id')})\")" 2>/dev/null || echo "❌ 创建工单失败"
 echo ""
 
